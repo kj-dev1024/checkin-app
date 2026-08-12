@@ -6,7 +6,7 @@
 
 **Architecture:** Next.js App Router on Vercel. All database access happens inside server actions using the Supabase service-role key; the browser holds no database credential and issues no queries. Phone numbers are validated per-country with `libphonenumber-js` and stored as E.164, which serves as the canonical lookup key.
 
-**Tech Stack:** Next.js 16.3.0, React 19.2.8, TypeScript, Tailwind CSS 4, `@supabase/supabase-js` 2.112.3, `libphonenumber-js` 1.13.10, Vitest 4.1.10.
+**Tech Stack:** Next.js 16.3.0, React 19.2.8, TypeScript, Tailwind CSS 4, `@supabase/supabase-js` 2.112.3, `libphonenumber-js` 1.13.10, Vitest 4.1.10. **Node 22.**
 
 ## Global Constraints
 
@@ -20,6 +20,21 @@
 - Phone validity is decided by `isValidPhoneNumber` / `.isValid()` — mobile **and** landline both accepted.
 - Timestamps render with an explicit locale and `timeZone: 'Asia/Singapore'` on both server and client.
 - Time budget is ~2 hours. Tasks 1–3 must be done before spending time on UI polish.
+- **Node 22 is required, and every shell command must select it explicitly.** This machine
+  defaults to Node 20.20.2, which has no global `WebSocket`; `@supabase/supabase-js`
+  builds a `RealtimeClient` inside `createClient()` and throws
+  `Node.js detected but native WebSocket not found` on ANY version of the package. Pinning
+  an older client does not help — this was tried and failed. Node 22.23.2 is installed via
+  nvm, but `.zshrc` force-prepends `/opt/homebrew/opt/node@20/bin` before nvm loads, so
+  non-interactive shells still get Node 20. **Start every shell command with:**
+
+  ```bash
+  export PATH="$HOME/.nvm/versions/node/v22.23.2/bin:$PATH"
+  ```
+
+  Verify with `node -v` → `v22.23.2` before trusting any npm/node result. Vercel already
+  runs Node 22+, so this is a local-environment concern only — do not add WebSocket
+  transport workarounds to application code.
 
 ---
 
@@ -98,6 +113,10 @@ cd ~/Documents/checkin-app
 npm i @supabase/supabase-js@2.112.3 libphonenumber-js@1.13.10 server-only
 npm i -D vitest@4.1.10
 ```
+
+This requires Node 22 — see Global Constraints. Confirm `node -v` prints `v22.23.2` first.
+Also create `.nvmrc` containing `22` and add `"engines": { "node": ">=22" }` to
+`package.json`, so the requirement lives in the repo and not only in this plan.
 
 `server-only` is a real package and is not included by `create-next-app`. It makes the build fail loudly if server-only code is ever imported into a client component.
 
@@ -821,13 +840,30 @@ Run `npm run dev` and open the page.
 
 Expected: `{ "count": 0, "recent": [] }`. This proves the server action reaches Supabase before any UI exists. Stop the server afterwards.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Restore `app/page.tsx`**
+
+The debug page was scaffolding for Step 4, not a deliverable. Revert it so it is never committed — Task 6 writes the real page.
 
 ```bash
 cd ~/Documents/checkin-app
-git add app/types.ts app/actions.ts app/page.tsx
-git commit -m "feat: add check-in and guest registration server actions"
+git checkout -- app/page.tsx
+git diff --stat app/page.tsx
 ```
+
+Expected: no output from `git diff --stat` — the file matches HEAD again.
+
+- [ ] **Step 6: Commit**
+
+Commit only the two new files. `app/page.tsx` must NOT appear in this commit.
+
+```bash
+cd ~/Documents/checkin-app
+git add app/types.ts app/actions.ts
+git commit -m "feat: add check-in and guest registration server actions"
+git show --stat HEAD
+```
+
+Expected: the commit touches exactly `app/types.ts` and `app/actions.ts`.
 
 ---
 
