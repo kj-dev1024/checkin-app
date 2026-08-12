@@ -20,7 +20,7 @@ re-litigate them.
 
 | Decision | Choice | Reason |
 |---|---|---|
-| Stack | Next.js 15 App Router on Vercel | Fastest reliable path from `git push` to a working live URL |
+| Stack | Next.js 16 App Router on Vercel | Fastest reliable path from `git push` to a working live URL. (Design discussion said "15"; 16.3.0 is current stable as of 2026-08-13 and is what the plan targets.) |
 | Backend | Supabase Postgres, service-role key server-side only | Browser never holds a database credential |
 | Count semantics | Every check-in counts; repeats allowed | Matches the brief literally and demos well |
 | Phone handling | `libphonenumber-js`, country selector, E.164 storage | Real per-country validation instead of invented length rules |
