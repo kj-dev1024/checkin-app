@@ -24,6 +24,15 @@ Phone numbers are validated per-country with `libphonenumber-js` and stored as E
 selector drives validation, which checks length *and* prefix rules per country rather than
 digit count alone.
 
+The country picker is searchable — type "sing", "65", or "SG" and it filters to Singapore.
+It is a small custom combobox rather than a library, so there is no extra dependency: the
+list, dial codes, and names all come from `libphonenumber-js` plus `Intl.DisplayNames`, and
+the flags are derived from the ISO code's regional-indicator code points.
+
+The phone field turns red once you type past a length the selected country accepts, using
+`validatePhoneNumberLength`. It deliberately stays neutral while the number is merely
+incomplete — going red from the first keystroke would train the operator to ignore it.
+
 `guests` and `check_ins` are separate tables: the guest registry and the check-in event log
 are different things, and since repeat check-ins are allowed, one table would mean either
 duplicating the name on every row or overwriting history.
@@ -54,7 +63,7 @@ Environment variables — neither is `NEXT_PUBLIC_`, because neither should reac
 npm test
 ```
 
-28 unit tests covering `lib/phone.ts` and `lib/time.ts` — the pure logic, and where the
+35 unit tests covering `lib/phone.ts` and `lib/time.ts` — the pure logic, and where the
 real edge cases live.
 
 ## Decisions and trade-offs

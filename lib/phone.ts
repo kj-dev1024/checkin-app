@@ -1,6 +1,7 @@
 import {
   parsePhoneNumberFromString,
   isValidPhoneNumber,
+  validatePhoneNumberLength,
   getCountries,
   getCountryCallingCode,
   AsYouType,
@@ -40,6 +41,34 @@ export function formatE164(e164: string): string {
 /** Progressive formatting while the operator types. */
 export function formatAsYouType(input: string, country: CountryCode): string {
   return new AsYouType(country).input(input)
+}
+
+export type LengthState = 'empty' | 'short' | 'ok' | 'over' | 'not-a-number'
+
+/**
+ * How the typed number's LENGTH relates to what `country` expects.
+ *
+ * Separate from validity on purpose: this drives the input's colour while the operator is
+ * still typing, where `isValidFor` would be red from the first keystroke and useless.
+ *
+ * `TOO_LONG` and `INVALID_LENGTH` both collapse to 'over' — for SG, 9 digits reports
+ * INVALID_LENGTH rather than TOO_LONG, but from the operator's seat both mean the same
+ * thing: you have typed past a length this country accepts.
+ */
+export function lengthState(input: string, country: CountryCode): LengthState {
+  if (!input.trim()) return 'empty'
+  const result = validatePhoneNumberLength(input, country)
+  if (result === undefined) return 'ok'
+  switch (result) {
+    case 'TOO_SHORT':
+      return 'short'
+    case 'TOO_LONG':
+    case 'INVALID_LENGTH':
+      return 'over'
+    default:
+      // NOT_A_NUMBER, INVALID_COUNTRY
+      return 'not-a-number'
+  }
 }
 
 export type CountryOption = {

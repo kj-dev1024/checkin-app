@@ -6,6 +6,7 @@ import {
   formatE164,
   formatAsYouType,
   countryOptions,
+  lengthState,
 } from './phone'
 
 describe('toE164', () => {
@@ -104,6 +105,44 @@ describe('formatAsYouType', () => {
 
   it('groups US digits as they are typed', () => {
     expect(formatAsYouType('2125551234', 'US')).toBe('(212) 555-1234')
+  })
+})
+
+describe('lengthState', () => {
+  it('is empty for no input, so the field starts neutral', () => {
+    expect(lengthState('', 'SG')).toBe('empty')
+    expect(lengthState('   ', 'SG')).toBe('empty')
+  })
+
+  it('is short while the operator is still typing', () => {
+    expect(lengthState('9', 'SG')).toBe('short')
+    expect(lengthState('9123', 'SG')).toBe('short')
+    expect(lengthState('912345', 'SG')).toBe('short')
+  })
+
+  it('is ok at the exact expected length', () => {
+    expect(lengthState('91234567', 'SG')).toBe('ok')
+    expect(lengthState('2125551234', 'US')).toBe('ok')
+  })
+
+  it('treats one digit past a valid SG length as over, not short', () => {
+    // libphonenumber reports INVALID_LENGTH here rather than TOO_LONG; both mean "past a
+    // length this country accepts", so both must turn the field red.
+    expect(lengthState('912345678', 'SG')).toBe('over')
+  })
+
+  it('is over when well past the maximum', () => {
+    expect(lengthState('9123456789012', 'SG')).toBe('over')
+    expect(lengthState('21255512345678', 'US')).toBe('over')
+  })
+
+  it('flags non-numeric input', () => {
+    expect(lengthState('abc', 'SG')).toBe('not-a-number')
+  })
+
+  it('is country-sensitive: 8 digits is ok for SG but short for US', () => {
+    expect(lengthState('91234567', 'SG')).toBe('ok')
+    expect(lengthState('91234567', 'US')).toBe('short')
   })
 })
 
