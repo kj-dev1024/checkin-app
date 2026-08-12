@@ -6,7 +6,7 @@ import type { CheckInResult, RecentCheckIn } from './types'
 import {
   countryOptions,
   isValidFor,
-  formatAsYouType,
+  handlePhoneInput,
   formatE164,
   lengthState,
   DEFAULT_COUNTRY,
@@ -147,14 +147,16 @@ export default function CheckInForm({
 
   const phoneIsValid = isValidFor(phone, country)
   const length = lengthState(phone, country)
-  // Red only once the operator has typed PAST a length this country accepts. Going red on
-  // 'short' would mean the field is red from the first keystroke, which teaches nothing.
-  const tooLong = length === 'over' || length === 'not-a-number'
+  // Only 'over' and 'not-a-number' are unrecoverable by typing more digits. 'short' and
+  // 'incomplete' both mean the operator is still mid-entry — colouring those red would
+  // have the field red from the first keystroke, and would be flatly wrong for countries
+  // with gaps between valid lengths (PH accepts 6, 8, 9, 10 digits).
+  const badLength = length === 'over' || length === 'not-a-number'
   // Right number of digits, still not a real number — an unassigned area code or an
   // invalid exchange prefix. Without this the button just sits dead with no explanation,
   // because nothing about the length is wrong.
   const wrongPrefix = length === 'ok' && !phoneIsValid
-  const showError = tooLong || wrongPrefix
+  const showError = badLength || wrongPrefix
 
   const errorText =
     length === 'not-a-number'
@@ -240,7 +242,7 @@ export default function CheckInForm({
                 placeholder="9123 4567"
                 aria-invalid={showError}
                 value={phone}
-                onChange={(e) => setPhone(formatAsYouType(e.target.value, country))}
+                onChange={(e) => setPhone(handlePhoneInput(phone, e.target.value, country))}
                 className={`min-w-0 flex-1 rounded-lg border px-3 py-3 text-lg outline-none ${
                   showError
                     ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-600'
