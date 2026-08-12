@@ -146,6 +146,34 @@ describe('lengthState', () => {
   })
 })
 
+describe('right length but invalid prefix', () => {
+  // Regression: "(923) 156-7888" has the correct 10 digits for the US, so lengthState is
+  // 'ok' and nothing turns red — but 923 is an unassigned area code and 156 is an invalid
+  // exchange prefix, so the number is rejected. The form must explain this combination
+  // rather than leaving the submit button dead with no message.
+  it('reports ok length for a US number whose prefix is unassigned', () => {
+    expect(lengthState('(923) 156-7888', 'US')).toBe('ok')
+  })
+
+  it('still rejects it as invalid', () => {
+    expect(isValidFor('(923) 156-7888', 'US')).toBe(false)
+    expect(toE164('(923) 156-7888', 'US')).toBeNull()
+  })
+
+  it('rejects a bad area code even with a good exchange', () => {
+    expect(isValidFor('(923) 555-1234', 'US')).toBe(false)
+  })
+
+  it('rejects a bad exchange even with a good area code', () => {
+    expect(isValidFor('(212) 156-7888', 'US')).toBe(false)
+  })
+
+  it('accepts genuinely valid US numbers', () => {
+    expect(isValidFor('(212) 555-1234', 'US')).toBe(true)
+    expect(isValidFor('(415) 555-2671', 'US')).toBe(true)
+  })
+})
+
 describe('countryOptions', () => {
   it('returns the full supported country list', () => {
     expect(countryOptions().length).toBeGreaterThan(200)

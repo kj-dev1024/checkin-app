@@ -150,6 +150,20 @@ export default function CheckInForm({
   // Red only once the operator has typed PAST a length this country accepts. Going red on
   // 'short' would mean the field is red from the first keystroke, which teaches nothing.
   const tooLong = length === 'over' || length === 'not-a-number'
+  // Right number of digits, still not a real number — an unassigned area code or an
+  // invalid exchange prefix. Without this the button just sits dead with no explanation,
+  // because nothing about the length is wrong.
+  const wrongPrefix = length === 'ok' && !phoneIsValid
+  const showError = tooLong || wrongPrefix
+
+  const errorText =
+    length === 'not-a-number'
+      ? 'Digits only, please.'
+      : length === 'over'
+        ? `Too long for ${selected.name} (${selected.dialCode}).`
+        : wrongPrefix
+          ? `Not a valid ${selected.name} number. The length is right, but that prefix is not in use.`
+          : null
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6">
@@ -224,22 +238,20 @@ export default function CheckInForm({
                 inputMode="tel"
                 autoComplete="off"
                 placeholder="9123 4567"
-                aria-invalid={tooLong}
+                aria-invalid={showError}
                 value={phone}
                 onChange={(e) => setPhone(formatAsYouType(e.target.value, country))}
                 className={`min-w-0 flex-1 rounded-lg border px-3 py-3 text-lg outline-none ${
-                  tooLong
+                  showError
                     ? 'border-red-500 bg-red-50 text-red-700 focus:border-red-600'
                     : 'border-slate-300 focus:border-slate-500'
                 }`}
               />
             </div>
 
-            {tooLong && (
+            {errorText && (
               <p role="alert" className="-mt-1 text-sm text-red-600">
-                {length === 'not-a-number'
-                  ? 'Digits only, please.'
-                  : `Too long for ${selected.name} (${selected.dialCode}).`}
+                {errorText}
               </p>
             )}
 
